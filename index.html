@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCB Capacity Dashboard V2 </title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f2f8;
+  --surface:#ffffff;
+  --border:#e2e6f0;
+  --accent:#1d4ed8;
+  --accent2:#6d28d9;
+  --green:#15803d;
+  --green-bg:#dcfce7;
+  --amber:#b45309;
+  --amber-bg:#fef3c7;
+  --red:#b91c1c;
+  --red-bg:#fee2e2;
+  --text:#0f172a;
+  --muted:#64748b;
+  --shadow:0 1px 6px rgba(15,23,42,0.08);
+  --shadow-md:0 4px 16px rgba(15,23,42,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* TOPBAR */
+.topbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 20px;height:54px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:200;
+  box-shadow:var(--shadow);
+}
+.tl{display:flex;align-items:center;gap:10px;}
+.logo{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.t-title{font-size:14px;font-weight:700;color:var(--text);}
+.live-clock{margin-left:14px;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--accent2);}
+.tr{display:flex;align-items:center;gap:8px;}
+.dot-live{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.t-update{font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+.btn-ref{padding:6px 13px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.15s;}
+.btn-ref:hover{opacity:0.85;}
+
+/* PAGES */
+.page{max-width:1280px;margin:0 auto;padding:18px 18px 48px;}
+
+/* FILTER BAR */
+.filter-bar{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:13px;padding:14px 16px;margin-bottom:16px;
+  box-shadow:var(--shadow);display:flex;gap:20px;flex-wrap:wrap;align-items:center;
+}
+.filter-group{display:flex;flex-direction:column;gap:6px;}
+.filter-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.9px;text-transform:uppercase;}
+.date-input{padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sarabun';font-size:14px;color:var(--text);outline:none;}
+.date-input:focus{border-color:var(--accent);}
+.slot-filter{display:flex;flex-wrap:wrap;gap:6px;}
+.sf-btn{padding:5px 11px;border:1.5px solid var(--border);border-radius:18px;background:var(--bg);color:var(--muted);font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.sf-btn.active{border-color:var(--accent);color:var(--accent);background:#eff6ff;}
+.sf-btn.all{border-color:var(--accent2);color:var(--accent2);background:#f5f3ff;}
+
+/* SUMMARY OEE CARDS */
+.sum-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+@media(max-width:700px){.sum-row{grid-template-columns:1fr 1fr;}}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:15px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:-14px;right:-14px;width:60px;height:60px;border-radius:50%;opacity:0.08;}
+.sc.oee-g::before{background:var(--green);}
+.sc.oee-a::before{background:var(--amber);}
+.sc.oee-r::before{background:var(--red);}
+.sc-label{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:7px;}
+.sc-val{font-size:32px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;}
+.sc-val.g{color:var(--green);}
+.sc-val.a{color:var(--amber);}
+.sc-val.r{color:var(--red);}
+.sc-sub{font-size:12px;color:var(--muted);margin-top:5px;font-weight:500;}
+
+/* SECTION HEADER */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.section-title{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:0.8px;text-transform:uppercase;}
+.section-badge{font-size:11px;background:#f1f5f9;padding:3px 10px;border-radius:18px;color:var(--muted);font-weight:600;}
+
+/* LINE GRID */
+.line-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-bottom:16px;}
+.line-card{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:13px;padding:14px 15px;box-shadow:var(--shadow);
+  cursor:pointer;transition:all 0.18s;position:relative;overflow:hidden;
+}
+.line-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--accent);}
+.line-card::after{content:'›';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:20px;color:var(--border);transition:color 0.15s;}
+.line-card:hover::after{color:var(--accent);}
+.lc-num{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.lc-oee{font-size:28px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:4px;}
+.lc-oee.g{color:var(--green);}
+.lc-oee.a{color:var(--amber);}
+.lc-oee.r{color:var(--red);}
+.lc-oee.muted{color:var(--muted);}
+.lc-sub{font-size:12px;color:var(--muted);font-weight:500;}
+.lc-status{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:18px;}
+.lc-status.g{background:var(--green-bg);color:var(--green);}
+.lc-status.a{background:var(--amber-bg);color:var(--amber);}
+.lc-status.r{background:var(--red-bg);color:var(--red);}
+.lc-status.muted{background:#f1f5f9;color:var(--muted);}
+.line-card.no-data{opacity:0.55;cursor:default;}
+.line-card.no-data:hover{transform:none;box-shadow:var(--shadow);border-color:var(--border);}
+.line-card.no-data::after{display:none;}
+
+/* PRODUCTION BAR CHART (Overview) */
+.prod-chart-wrap{display:flex;flex-direction:column;gap:8px;}
+.prod-row{display:flex;align-items:center;gap:10px;}
+.prod-label{font-size:13px;font-weight:700;color:var(--muted);width:56px;flex-shrink:0;}
+.prod-bar-wrap{flex:1;height:24px;background:#f1f5f9;border-radius:6px;overflow:hidden;}
+.prod-bar{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.7s ease;min-width:2px;}
+.prod-val{font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;width:60px;text-align:right;flex-shrink:0;color:var(--text);}
+.prod-empty{text-align:center;padding:20px;color:var(--muted);font-size:13px;}
+
+/* DRILL-DOWN PANEL */
+#drill-panel{display:none;}
+.back-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.btn-back{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:9px;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;transition:all 0.15s;}
+.btn-back:hover{background:var(--bg);border-color:var(--accent);color:var(--accent);}
+.drill-title{font-size:18px;font-weight:800;color:var(--text);}
+.drill-sub{font-size:13px;color:var(--muted);margin-left:4px;}
+
+/* CHARTS */
+.g2{display:grid;grid-template-columns:1fr 1.5fr;gap:12px;margin-bottom:12px;}
+@media(max-width:768px){.g2{grid-template-columns:1fr;}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px;}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ct{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.9px;text-transform:uppercase;}
+.cb{font-size:11px;background:#f1f5f9;padding:2px 8px;border-radius:18px;color:var(--muted);font-weight:600;}
+
+/* DONUT */
+.dw{display:flex;align-items:center;gap:16px;}
+.donut{position:relative;width:86px;height:86px;flex-shrink:0;}
+.donut svg{transform:rotate(-90deg);}
+.dl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.dp{font-size:16px;font-weight:800;color:var(--green);font-family:'IBM Plex Mono',monospace;}
+.dt{font-size:9px;color:var(--muted);font-weight:600;}
+.leg{flex:1;display:flex;flex-direction:column;gap:7px;}
+.li{display:flex;align-items:center;justify-content:space-between;}
+.ll{display:flex;align-items:center;gap:6px;font-size:13px;}
+.ld{width:7px;height:7px;border-radius:50%;}
+.lc{font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+
+/* BAR CHART */
+.bc{display:flex;flex-direction:column;gap:7px;}
+.br{display:flex;align-items:center;gap:8px;}
+.bn{font-size:12px;color:var(--muted);width:68px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;}
+.bt{flex:1;height:18px;background:#f1f5f9;border-radius:5px;overflow:hidden;}
+.bf{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:5px;transition:width 0.6s;min-width:2px;}
+.bv{font-size:11.5px;font-weight:700;font-family:'IBM Plex Mono',monospace;width:44px;text-align:right;flex-shrink:0;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-size:11px;font-weight:700;color:var(--muted);padding:8px;text-align:left;border-bottom:2px solid var(--border);}
+.tbl td{padding:10px 8px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:18px;font-size:11px;font-weight:600;}
+.done{background:var(--green-bg);color:var(--green);}
+.pend{background:var(--red-bg);color:var(--red);}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:12px;}
+.slot-tag{background:#eff6ff;color:var(--accent);padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;}
+.empty{text-align:center;padding:28px;color:var(--muted);}
+.ei{font-size:28px;margin-bottom:6px;}
+
+/* HOURLY BAR */
+.hourly-wrap{display:flex;flex-direction:column;gap:5px;}
+.hrow{display:flex;align-items:center;gap:8px;}
+.hslot{font-size:11px;color:var(--muted);width:90px;flex-shrink:0;font-weight:600;font-family:'IBM Plex Mono',monospace;}
+.hbar-wrap{flex:1;height:20px;background:#f1f5f9;border-radius:5px;overflow:hidden;position:relative;}
+.hbar{height:100%;border-radius:5px;transition:width 0.5s;}
+.hbar.g{background:linear-gradient(90deg,#16a34a,#22c55e);}
+.hbar.a{background:linear-gradient(90deg,#d97706,#f59e0b);}
+.hbar.r{background:linear-gradient(90deg,#dc2626,#ef4444);}
+.hval{font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;width:36px;text-align:right;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tl">
+    <div class="logo">🏭</div>
+    <span class="t-title">TCB Capacity Dashboard V2 </span>
+    <span class="live-clock" id="live-clock">--:--:--</span>
+  </div>
+  <div class="tr">
+    <span class="t-update"><span class="dot-live"></span>ล่าสุด: <span id="t-upd">กำลังโหลด...</span></span>
+    <button class="btn-ref" onclick="loadData()">⟳ รีเฟรช</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- FILTER BAR (shared) -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">📅 วันที่</span>
+      <input type="date" id="date-filter" class="date-input" onchange="onFilterChange()">
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">🕐 ช่วงเวลา</span>
+      <div class="slot-filter" id="slot-filter"></div>
+    </div>
+  </div>
+
+  <!-- ===== OVERVIEW PANEL ===== -->
+  <div id="overview-panel">
+
+    <!-- OEE Summary Cards (all lines) -->
+    <div class="sum-row">
+      <div class="sc" id="ov-card-oee">
+        <div class="sc-label">🏆 OEE รวมทุกไลน์</div>
+        <div class="sc-val" id="ov-val-oee">—</div>
+        <div class="sc-sub">เป้าหมาย &gt; 75%</div>
+      </div>
+      <div class="sc" id="ov-card-a">
+        <div class="sc-label">⚙️ AVAILABILITY</div>
+        <div class="sc-val" id="ov-val-a">—</div>
+        <div class="sc-sub">หยุดรวม <span id="ov-dt-min">0</span> นาที</div>
+      </div>
+      <div class="sc" id="ov-card-p">
+        <div class="sc-label">⚡ PERFORMANCE</div>
+        <div class="sc-val" id="ov-val-p">—</div>
+        <div class="sc-sub">ยอดรวม <span id="ov-tot-box">0</span> กล่อง</div>
+      </div>
+      <div class="sc" id="ov-card-q">
+        <div class="sc-label">✨ QUALITY</div>
+        <div class="sc-val" id="ov-val-q">—</div>
+        <div class="sc-sub">ของเสีย <span id="ov-def-box">0</span> กล่อง</div>
+      </div>
+    </div>
+
+    <!-- Production Bar Chart -->
+    <div class="section-head">
+      <span class="section-title">📦 ยอดผลิตแบ่งตามไลน์ (กล่อง)</span>
+      <span class="section-badge" id="ov-total-badge">รวม 0 กล่อง</span>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="prod-chart-wrap" id="ov-prod-chart">
+        <div class="prod-empty">ไม่มีข้อมูล</div>
+      </div>
+    </div>
+
+    <!-- Line Grid -->
+    <div class="section-head">
+      <span class="section-title">📋 สถานะแต่ละไลน์</span>
+      <span class="section-badge" id="active-line-count">0 ไลน์มีข้อมูล</span>
+    </div>
+    <div class="line-grid" id="line-grid"></div>
+
+  </div>
+
+  <!-- ===== DRILL-DOWN PANEL ===== -->
+  <div id="drill-panel">
+
+    <div class="back-bar">
+      <button class="btn-back" onclick="showOverview()">← กลับ Overview</button>
+      <span class="drill-title" id="drill-title">LINE 1</span>
+      <span class="drill-sub" id="drill-sub"></span>
+    </div>
+
+    <!-- Drill OEE Cards -->
+    <div class="sum-row">
+      <div class="sc" id="dr-card-oee">
+        <div class="sc-label">🏆 OEE</div>
+        <div class="sc-val" id="dr-val-oee">—</div>
+        <div class="sc-sub">เป้าหมาย &gt; 75%</div>
+      </div>
+      <div class="sc" id="dr-card-a">
+        <div class="sc-label">⚙️ AVAILABILITY</div>
+        <div class="sc-val" id="dr-val-a">—</div>
+        <div class="sc-sub">หยุดรวม <span id="dr-dt-min">0</span> นาที</div>
+      </div>
+      <div class="sc" id="dr-card-p">
+        <div class="sc-label">⚡ PERFORMANCE</div>
+        <div class="sc-val" id="dr-val-p">—</div>
+        <div class="sc-sub">ยอดรวม <span id="dr-tot-box">0</span> กล่อง</div>
+      </div>
+      <div class="sc" id="dr-card-q">
+        <div class="sc-label">✨ QUALITY</div>
+        <div class="sc-val" id="dr-val-q">—</div>
+        <div class="sc-sub">ของเสีย <span id="dr-def-box">0</span> กล่อง</div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><span class="ct">🎯 สัดส่วนคุณภาพ</span></div>
+        <div class="dw">
+          <div class="donut">
+            <svg width="86" height="86" viewBox="0 0 86 86">
+              <circle cx="43" cy="43" r="33" fill="none" stroke="#f1f5f9" stroke-width="9"/>
+              <circle cx="43" cy="43" r="33" fill="none" stroke="#15803d" stroke-width="9"
+                stroke-dasharray="207.3" stroke-dashoffset="207.3" id="dr-darc"
+                style="transition:stroke-dashoffset 0.7s ease;"/>
+            </svg>
+            <div class="dl"><span class="dp" id="dr-dpct">0%</span><span class="dt">ของดี</span></div>
+          </div>
+          <div class="leg">
+            <div class="li"><div class="ll"><div class="ld" style="background:var(--green)"></div>ของดี</div><span class="lc" id="dr-ld1">0</span></div>
+            <div class="li"><div class="ll"><div class="ld" style="background:var(--red)"></div>ของเสีย</div><span class="lc" id="dr-ld2">0</span></div>
+            <div class="li" style="margin-top:5px;padding-top:7px;border-top:1px solid var(--border)">
+              <div class="ll" style="color:var(--muted);font-size:12px;">รวม</div><span class="lc" id="dr-ld3">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><span class="ct">📊 ยอดผลิตรายชั่วโมง (กล่อง)</span></div>
+        <div class="hourly-wrap" id="dr-hourly"></div>
+      </div>
+    </div>
+
+    <!-- Live Feed Table -->
+    <div class="card">
+      <div class="ch"><span class="ct">⚡ รายการบันทึก</span><span class="cb" id="dr-fc">0 รายการ</span></div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>เวลา</th><th>ช่วงเวลา</th><th>Order Ref</th><th>Product Code</th>
+              <th>Can Size</th><th>อัตรา (@)</th><th>ผลิตได้ (กล่อง)</th>
+              <th>ของเสีย</th><th>หยุด (นาที)</th><th>สถานะ</th><th>หมายเหตุ</th>
+            </tr>
+          </thead>
+          <tbody id="dr-feed-body">
+            <tr><td colspan="11"><div class="empty"><div class="ei">⏳</div><div>กำลังโหลด...</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end drill-panel -->
+
+</div><!-- end page -->
+
+<script>
+// ========================================
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbxt_H_cwfoAraz90CkQRbDUYaXujWLrGvC6OWrQBMSsAzgJMXV8y-d0S-SxgWwTnTPEkQ/exec";
+// ========================================
+
+let allData = [];
+let activeSlot = 'all';
+let activeLine = null;
+
+// ---- Live Clock ----
+setInterval(() => {
+  document.getElementById('live-clock').textContent =
+    new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}, 1000);
+
+// ---- Date default = today ----
+document.getElementById('date-filter').valueAsDate = new Date();
+
+// ---- Build slot filter buttons ----
+const slots = [];
+for (let h = 7; h < 21; h++) {
+  slots.push(String(h).padStart(2,'0') + ':00 – ' + String(h+1).padStart(2,'0') + ':00');
+}
+const filterEl = document.getElementById('slot-filter');
+const allBtn = document.createElement('button');
+allBtn.className = 'sf-btn all active';
+allBtn.textContent = '📋 ทั้งวัน';
+allBtn.onclick = () => setSlotFilter('all', allBtn);
+filterEl.appendChild(allBtn);
+slots.forEach(slot => {
+  const btn = document.createElement('button');
+  btn.className = 'sf-btn';
+  btn.textContent = slot;
+  btn.onclick = () => setSlotFilter(slot, btn);
+  filterEl.appendChild(btn);
+});
+
+function setSlotFilter(slot, el) {
+  activeSlot = slot;
+  document.querySelectorAll('.sf-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderAll(allData);
+}
+
+function onFilterChange() {
+  renderAll(allData);
+}
+
+// ---- Color helpers ----
+function oeeColor(val) {
+  if (val >= 75) return 'g';
+  if (val >= 60) return 'a';
+  return 'r';
+}
+function oeeLabel(val) {
+  if (val >= 75) return { cls:'g', txt:'✅ ผ่านเกณฑ์' };
+  if (val >= 60) return { cls:'a', txt:'🟡 ต้องปรับปรุง' };
+  return { cls:'r', txt:'🔴 วิกฤต' };
+}
+
+// ---- OEE calculation for a set of rows ----
+function calcOEE(rows) {
+  const planMins = rows.reduce((s,r) => s + (Number(r.plannedMins) || 60), 0);
+  const dtMins   = rows.reduce((s,r) => s + (Number(r.minuteCount) || 0), 0);
+  const opMins   = Math.max(planMins - dtMins, 0);
+  const avail    = planMins > 0 ? (opMins / planMins) * 100 : 0;
+
+  const good  = rows.reduce((s,r) => s + (Number(r.dailyTotal) || 0), 0);
+  const bad   = rows.reduce((s,r) => s + (Number(r.defectTotal) || 0), 0);
+  const total = good + bad;
+  const qual  = total > 0 ? (good / total) * 100 : 0;
+
+  const target = rows.reduce((s,r) => s + (Number(r.productRate) || 0), 0);
+  let perf = target > 0 ? (total / target) * 100 : 0;
+  if (perf > 100) perf = 100;
+
+  const oee = (avail / 100) * (perf / 100) * (qual / 100) * 100;
+  return { avail, perf, qual, oee, good, bad, total, dtMins, planMins };
+}
+
+// ---- Filter rows by date + slot ----
+function filterRows(rows) {
+  const targetDate = document.getElementById('date-filter').value;
+  return rows.filter(r => {
+    if (!r.timestamp) return false;
+    const rowDate = new Date(r.timestamp).toISOString().split('T')[0];
+    const matchDate = rowDate === targetDate;
+    const matchSlot = (activeSlot === 'all') || (r.timeSlot === activeSlot);
+    return matchDate && matchSlot;
+  });
+}
+
+// ---- Update a card ----
+function updateCard(prefix, key, valStr, colorClass) {
+  const card = document.getElementById(prefix + 'card-' + key);
+  const text = document.getElementById(prefix + 'val-' + key);
+  if (!card || !text) return;
+  card.className = 'sc oee-' + colorClass;
+  text.className = 'sc-val ' + colorClass;
+  text.textContent = valStr;
+}
+
+// ---- RENDER ALL (overview + maybe drill) ----
+function renderAll(rows) {
+  const filtered = filterRows(rows);
+  renderOverview(filtered);
+  if (activeLine !== null) renderDrill(filtered);
+}
+
+// ---- OVERVIEW ----
+function renderOverview(filtered) {
+  // All-line OEE
+  const m = calcOEE(filtered);
+  if (filtered.length === 0) {
+    ['oee','a','p','q'].forEach(k => updateCard('ov-','oee'===k?'oee':k, '—', 'muted'));
+    document.getElementById('ov-val-oee').textContent = '—';
+    document.getElementById('ov-val-a').textContent = '—';
+    document.getElementById('ov-val-p').textContent = '—';
+    document.getElementById('ov-val-q').textContent = '—';
+    document.getElementById('ov-dt-min').textContent = '0';
+    document.getElementById('ov-tot-box').textContent = '0';
+    document.getElementById('ov-def-box').textContent = '0';
+  } else {
+    updateCard('ov-', 'oee', m.oee.toFixed(1)+'%', oeeColor(m.oee));
+    updateCard('ov-', 'a',   m.avail.toFixed(1)+'%', oeeColor(m.avail));
+    updateCard('ov-', 'p',   m.perf.toFixed(1)+'%',  oeeColor(m.perf));
+    updateCard('ov-', 'q',   m.qual.toFixed(1)+'%',  oeeColor(m.qual));
+    document.getElementById('ov-dt-min').textContent = m.dtMins;
+    document.getElementById('ov-tot-box').textContent = m.total.toLocaleString();
+    document.getElementById('ov-def-box').textContent = m.bad.toLocaleString();
+  }
+
+  // Per-line cards
+  const lineMap = {};
+  filtered.forEach(r => {
+    const k = Number(r.line) || 0;
+    if (!lineMap[k]) lineMap[k] = [];
+    lineMap[k].push(r);
+  });
+
+  const activeLines = Object.keys(lineMap).map(Number).filter(n => n > 0);
+  document.getElementById('active-line-count').textContent = activeLines.length + ' ไลน์มีข้อมูล';
+
+  const grid = document.getElementById('line-grid');
+  grid.innerHTML = '';
+
+  // ลำดับไลน์จริง: 0.5, 1, 2, ..., 12
+  const lineOrder = [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+  lineOrder.forEach(i => {
+    const rows = lineMap[i] || [];
+    const card = document.createElement('div');
+    const lineLabel = i === 0.5 ? 'LINE 0.5' : 'LINE ' + i;
+
+    if (rows.length === 0) {
+      card.className = 'line-card no-data';
+      card.innerHTML = `
+        <div class="lc-num">${lineLabel}</div>
+        <div class="lc-oee muted">—</div>
+        <div class="lc-sub">ไม่มีข้อมูลวันนี้</div>
+        <span class="lc-status muted">ไม่มีข้อมูล</span>`;
+    } else {
+      const m = calcOEE(rows);
+      const lbl = oeeLabel(m.oee);
+      card.className = 'line-card';
+      card.onclick = () => showDrill(i);
+      card.innerHTML = `
+        <div class="lc-num">${lineLabel}</div>
+        <div class="lc-oee ${lbl.cls}">${m.oee.toFixed(1)}%</div>
+        <div class="lc-sub">${m.total.toLocaleString()} กล่อง · หยุด ${m.dtMins} นาที</div>
+        <span class="lc-status ${lbl.cls}">${lbl.txt}</span>`;
+    }
+    grid.appendChild(card);
+  });
+
+  // Production bar chart
+  const prodData = [];
+  for (let i = 1; i <= 13; i++) {
+    const rows = lineMap[i] || [];
+    if (rows.length === 0) continue;
+    const good = rows.reduce((s, r) => s + (Number(r.dailyTotal) || 0), 0);
+    if (good > 0) prodData.push({ line: i, good });
+  }
+  const maxGood = Math.max(...prodData.map(d => d.good), 1);
+  const totalGood = prodData.reduce((s, d) => s + d.good, 0);
+  document.getElementById('ov-total-badge').textContent = 'รวม ' + totalGood.toLocaleString() + ' กล่อง';
+  const prodChart = document.getElementById('ov-prod-chart');
+  if (prodData.length === 0) {
+    prodChart.innerHTML = '<div class="prod-empty">ไม่มีข้อมูลการผลิตในช่วงนี้</div>';
+  } else {
+    prodChart.innerHTML = prodData.map(d => `
+      <div class="prod-row">
+        <span class="prod-label">Line ${d.line}</span>
+        <div class="prod-bar-wrap">
+          <div class="prod-bar" style="width:${Math.round(d.good / maxGood * 100)}%"></div>
+        </div>
+        <span class="prod-val">${d.good.toLocaleString()}</span>
+      </div>`).join('');
+  }
+}
+
+// ---- DRILL-DOWN ----
+function showDrill(lineNum) {
+  activeLine = lineNum;
+  document.getElementById('overview-panel').style.display = 'none';
+  document.getElementById('drill-panel').style.display = 'block';
+  document.getElementById('drill-title').textContent = 'LINE ' + lineNum;
+  renderDrill(filterRows(allData));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function showOverview() {
+  activeLine = null;
+  document.getElementById('drill-panel').style.display = 'none';
+  document.getElementById('overview-panel').style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderDrill(filtered) {
+  const rows = filtered.filter(r => Number(r.line) === activeLine);
+  document.getElementById('drill-sub').textContent =
+    rows.length > 0 ? rows.length + ' รายการ' : 'ไม่มีข้อมูลในช่วงนี้';
+
+  const m = calcOEE(rows);
+
+  if (rows.length === 0) {
+    ['oee','a','p','q'].forEach(k => {
+      const card = document.getElementById('dr-card-' + k);
+      const text = document.getElementById('dr-val-' + k);
+      if (card) card.className = 'sc';
+      if (text) { text.className = 'sc-val muted'; text.textContent = '—'; }
+    });
+    document.getElementById('dr-dt-min').textContent = '0';
+    document.getElementById('dr-tot-box').textContent = '0';
+    document.getElementById('dr-def-box').textContent = '0';
+  } else {
+    updateCard('dr-', 'oee', m.oee.toFixed(1)+'%', oeeColor(m.oee));
+    updateCard('dr-', 'a',   m.avail.toFixed(1)+'%', oeeColor(m.avail));
+    updateCard('dr-', 'p',   m.perf.toFixed(1)+'%',  oeeColor(m.perf));
+    updateCard('dr-', 'q',   m.qual.toFixed(1)+'%',  oeeColor(m.qual));
+    document.getElementById('dr-dt-min').textContent = m.dtMins;
+    document.getElementById('dr-tot-box').textContent = m.total.toLocaleString();
+    document.getElementById('dr-def-box').textContent = m.bad.toLocaleString();
+  }
+
+  // Donut
+  const darc = document.getElementById('dr-darc');
+  const dpct = document.getElementById('dr-dpct');
+  darc.style.strokeDashoffset = 207.3 * (1 - m.qual / 100);
+  dpct.textContent = Math.round(m.qual) + '%';
+  dpct.style.color = m.qual >= 99 ? 'var(--green)' : m.qual >= 85 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('dr-ld1').textContent = m.good.toLocaleString();
+  document.getElementById('dr-ld2').textContent = m.bad.toLocaleString();
+  document.getElementById('dr-ld3').textContent = m.total.toLocaleString();
+
+  // Hourly bar chart
+  const hourMap = {};
+  rows.forEach(r => {
+    const slot = r.timeSlot || 'ไม่ระบุ';
+    if (!hourMap[slot]) hourMap[slot] = 0;
+    hourMap[slot] += Number(r.dailyTotal) || 0;
+  });
+  const maxVal = Math.max(...Object.values(hourMap), 1);
+  const hourlyEl = document.getElementById('dr-hourly');
+  if (Object.keys(hourMap).length === 0) {
+    hourlyEl.innerHTML = '<div class="empty"><div class="ei">📭</div><div>ไม่มีข้อมูล</div></div>';
+  } else {
+    hourlyEl.innerHTML = Object.entries(hourMap).map(([slot, val]) => {
+      const pct = Math.round(val / maxVal * 100);
+      const cls = val >= (maxVal * 0.8) ? 'g' : val >= (maxVal * 0.5) ? 'a' : 'r';
+      return `<div class="hrow">
+        <span class="hslot">${slot}</span>
+        <div class="hbar-wrap"><div class="hbar ${cls}" style="width:${pct}%"></div></div>
+        <span class="hval">${val.toLocaleString()}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Table
+  const feed = [...rows].reverse();
+  document.getElementById('dr-fc').textContent = feed.length + ' รายการ';
+  document.getElementById('dr-feed-body').innerHTML = feed.length === 0
+    ? '<tr><td colspan="11"><div class="empty"><div class="ei">📭</div><div>ไม่พบข้อมูลในช่วงนี้</div></div></td></tr>'
+    : feed.map(r => {
+        const t = new Date(r.timestamp);
+        const timeStr = isNaN(t) ? '-' : t.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+        const isDone = r.status === 'เดินเครื่องปกติ' || r.status === 'เสร็จแล้ว';
+        return `<tr>
+          <td><span class="mono">${timeStr}</span></td>
+          <td><span class="slot-tag">${r.timeSlot||'-'}</span></td>
+          <td><span class="mono">${r.orderRef||'-'}</span></td>
+          <td>${r.productCode||'-'}</td>
+          <td>${r.canSize||'-'}</td>
+          <td><span class="mono">${r.productRate||'-'}</span></td>
+          <td style="color:var(--green);font-weight:700;">${r.dailyTotal||0}</td>
+          <td style="color:var(--red);font-weight:700;">${r.defectTotal||0}</td>
+          <td><span class="mono">${r.minuteCount||0}</span></td>
+          <td><span class="badge ${isDone?'done':'pend'}">${isDone?'🟢 ปกติ':'🔴 หยุด'}</span></td>
+          <td style="color:var(--muted);font-size:12px;">${r.notes||'-'}</td>
+        </tr>`;
+      }).join('');
+}
+
+// ---- Fetch data ----
+function fetchSheet() {
+  return new Promise((resolve, reject) => {
+    const cb = 'cb_' + Date.now();
+    const s = document.createElement('script');
+    const timer = setTimeout(() => { reject(new Error('timeout')); s.remove(); delete window[cb]; }, 12000);
+    window[cb] = (data) => { clearTimeout(timer); resolve(data); s.remove(); delete window[cb]; };
+    s.onerror = () => { clearTimeout(timer); reject(new Error('load error')); };
+    s.src = SHEET_URL + '?callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
+
+async function loadData() {
+  document.getElementById('t-upd').textContent = 'กำลังโหลด...';
+  try {
+    allData = await fetchSheet();
+    renderAll(allData);
+    document.getElementById('t-upd').textContent =
+      new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  } catch(err) {
+    document.getElementById('t-upd').textContent = 'โหลดไม่สำเร็จ';
+    console.error(err);
+  }
+}
+
+loadData();
+setInterval(loadData, 20000);
+</script>
+</body>
+</html>
