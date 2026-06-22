@@ -323,9 +323,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
         <table class="tbl">
           <thead>
             <tr>
-              <th>เวลา</th><th>ช่วงเวลา</th><th>Order Ref</th><th>Product Code</th>
+          <th>เวลา</th><th>ช่วงเวลา</th><th>Order Ref</th><th>Product Code</th>
               <th>Can Size</th><th>อัตรา (@)</th><th>ผลิตได้ (กล่อง)</th>
-              <th>ของเสีย</th><th>หยุด (นาที)</th><th>สถานะ</th><th>หมายเหตุ</th>
+              <th>หยุด (นาที)</th><th>สถานะ</th><th>หมายเหตุ</th>
             </tr>
           </thead>
           <tbody id="dr-feed-body">
@@ -341,7 +341,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 
 <script>
 // ========================================
-const SHEET_URL = "AKfycbyKEeKLZ6v-WCDby9MmEbcnn--Tcfp8hZmyr0gWOFltaGu_m17Tyfigc5ca5XXQH-sFrg/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbyKEeKLZ6v-WCDby9MmEbcnn--Tcfp8hZmyr0gWOFltaGu_m17Tyfigc5ca5XXQH-sFrg/exec";
 // ========================================
 
 let allData = [];
@@ -407,12 +407,12 @@ function calcOEE(rows) {
   const avail    = planMins > 0 ? (opMins / planMins) * 100 : 0;
 
   const good  = rows.reduce((s,r) => s + (Number(r.dailyTotal) || 0), 0);
-  const bad   = rows.reduce((s,r) => s + (Number(r.defectTotal) || 0), 0);
-  const total = good + bad;
-  const qual  = total > 0 ? (good / total) * 100 : 0;
+  const bad   = 0; // DefectBoxes ถูกตัดออกจาก schema แล้ว
+  const total = good;
+  const qual  = 100; // รอยืนยันสูตรกับบริษัท
 
   const target = rows.reduce((s,r) => s + (Number(r.productRate) || 0), 0);
-  let perf = target > 0 ? (total / target) * 100 : 0;
+  let perf = target > 0 ? (good / target) * 100 : 0;
   if (perf > 100) perf = 100;
 
   const oee = (avail / 100) * (perf / 100) * (qual / 100) * 100;
@@ -621,7 +621,7 @@ function renderDrill(filtered) {
   const feed = [...rows].reverse();
   document.getElementById('dr-fc').textContent = feed.length + ' รายการ';
   document.getElementById('dr-feed-body').innerHTML = feed.length === 0
-    ? '<tr><td colspan="11"><div class="empty"><div class="ei">📭</div><div>ไม่พบข้อมูลในช่วงนี้</div></div></td></tr>'
+    ? '<tr><td colspan="10"><div class="empty"><div class="ei">📭</div><div>ไม่พบข้อมูลในช่วงนี้</div></div></td></tr>'
     : feed.map(r => {
         const t = new Date(r.timestamp);
         const timeStr = isNaN(t) ? '-' : t.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
@@ -634,7 +634,6 @@ function renderDrill(filtered) {
           <td>${r.canSize||'-'}</td>
           <td><span class="mono">${r.productRate||'-'}</span></td>
           <td style="color:var(--green);font-weight:700;">${r.dailyTotal||0}</td>
-          <td style="color:var(--red);font-weight:700;">${r.defectTotal||0}</td>
           <td><span class="mono">${r.minuteCount||0}</span></td>
           <td><span class="badge ${isDone?'done':'pend'}">${isDone?'🟢 ปกติ':'🔴 หยุด'}</span></td>
           <td style="color:var(--muted);font-size:12px;">${r.notes||'-'}</td>
